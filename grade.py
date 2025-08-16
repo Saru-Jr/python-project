@@ -13,8 +13,6 @@ class student:
             return 'Grade: B'
         elif self.grade > 75 and self.grade <= 100:
             return 'Grade: A'
-        elif self.grade == 100:
-            return 'Grade: OMG you are a genius!'
         elif self.grade > 100:
             return 'Grade: invalid'
         else:
