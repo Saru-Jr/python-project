@@ -1,62 +1,70 @@
-class food:
-    def __init__(food, name, calories, vitamineA, vitamineC, cost):
-        food.name = name
-        food.calories = calories
-        food.vitamineA = vitamineA
-        food.vitamineC = vitamineC
-        food.cost = cost
+import sqlite3
+from datetime import datetime
+import random
 
-    def get_nutrition_info(food):
-        return f"name: {food.name}, Calories: {food.calories}, Vitamine A: {food.vitamineA}%, Vitamine C: {food.vitamineC}%"
+class Food:
+    def __init__(self, name, calories, vitamineA, vitamineC, cost):
+        self.id = random.randint(100, 999)  # Initial 3-digit ID
+        self.name = name
+        self.calories = calories
+        self.vitamineA = vitamineA
+        self.vitamineC = vitamineC
+        self.cost = cost
+        self.connect_db()
+        self.ensure_unique_id()  # Make sure ID is unique
 
-    def get_cost_info(food):
-        return f"Cost: ${food.cost}"
-    
-    def get_food_caloriestat(food):
-        if food.calories < 100:
-            return "Low-calorie food"
-        elif food.calories < 200:
-            return "Medium-calorie food"
-        else:
-            return "High-calorie food"
+    def connect_db(self):
+        self.conn = sqlite3.connect('foods.db')
+        self.cursor = self.conn.cursor()
+        self.create_table()
 
-    def get_vitamineA_stat(food):
-        if food.vitamineA < 10:
-            return "Low Vitamine A"
-        elif food.vitamineA < 20:
-            return "Medium Vitamine A"
-        else:
-            return "High Vitamine A"
+    def create_table(self):
+        self.cursor.execute('''
+        CREATE TABLE IF NOT EXISTS foods (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            calories INTEGER,
+            vitamine_a INTEGER,
+            vitamine_c INTEGER,
+            cost REAL,
+            created_at TIMESTAMP
+        )
+        ''')
+        self.conn.commit()
 
-    def get_vitamineC_stat(food):
-        if food.vitamineC < 10:
-            return "Low Vitamine C"
-        elif food.vitamineC < 20:
-            return "Medium Vitamine C"
-        else:
-            return "High Vitamine C"
-        
-    def get_cost(food):
-        if food.cost < 1:
-            return "Low-cost food"
-        elif food.cost < 5:
-            return "Medium-cost food"
-        else:
-            return "High-cost food"
+    def is_id_taken(self, id_to_check):
+        self.cursor.execute('SELECT 1 FROM foods WHERE id = ?', (id_to_check,))
+        return self.cursor.fetchone() is not None
 
+    def ensure_unique_id(self):
+        while self.is_id_taken(self.id):
+            self.id = random.randint(100, 999)  # Generate new ID if taken
+
+    def save_to_db(self):
+        self.cursor.execute('''
+        INSERT INTO foods (id, name, calories, vitamine_a, vitamine_c, cost, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (self.id, self.name, self.calories, self.vitamineA, self.vitamineC, self.cost, datetime.now()))
+        self.conn.commit()
+
+    def get_nutrition_info(self):
+        return f"ID: {self.id}, Name: {self.name}, Calories: {self.calories}, Vitamine A: {self.vitamineA}%, Vitamine C: {self.vitamineC}%"
+
+    def get_cost_info(self):
+        return f"Cost: ${self.cost}"
+
+# Get user input
 name = input("Enter food name: ")
 calories = int(input("Enter calories: "))
 vitamineA = int(input("Enter Vitamine A (%): "))
 vitamineC = int(input("Enter Vitamine C (%): "))
 cost = float(input("Enter cost: $"))
 
-food_item = food(name, calories, vitamineA, vitamineC, cost)
+# Create food item and save to database
+food_item = Food(name, calories, vitamineA, vitamineC, cost)
+food_item.save_to_db()
 
+# Display information
 print(food_item.get_nutrition_info())
 print(food_item.get_cost_info())
-print()
-print(food_item.get_food_caloriestat())
-print(food_item.get_vitamineA_stat())
-print(food_item.get_vitamineC_stat())
-print()
-print(food_item.get_cost())
+print("Food item saved to database successfully.")
